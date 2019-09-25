@@ -1,0 +1,66 @@
+---
+title: "Assignment 2 MSB1015 Making Multivariate Statistics Reuseable"
+author: "Caroline Collins 6192527"
+date: "25 September 2019"
+output: html_document
+---
+
+Project Synopsis
+
+Data analysis is a long process that does not merely involve running a statistical
+analysis, but starts with the raw, experimental data that needs to be processed and
+cleaned, the actual analysis or modelling, and the creation of visualization of the
+results. 
+During the analysis you will likely have to play with the many parameters
+you have to select, to get meaningful outcomes. All this needs to be documented,
+allowing you and others to easily reproduce your results. 
+In this assignment you will use Markdown and R to make an interactive notebook where you combine explanation of the steps you perform, computation, and visualization of the results.
+
+Computational Chemistry Background
+
+Harry Wiener realized in 1947 that if physicochemical properties are determined by
+the chemical structure, then the latter must be correlated to the first. In that year he
+published work where he made a correlation model that linked 
+
+structural features
+with boiling points, 
+
+starting a new era in computational chemistry. 
+Making such regression models is now routine in the life sciences, and not only for
+physicochemical properties but also biochemical properties.
+In this assignment you will use SPARQL to query physicochemical properties from
+Wikidata for a series of chemical properties and make a (PLS) Partial Least Squares model
+(or similar) in an R Markdown notebook with RStudio. 
+You will have to use a training-test set split 
+(e.g. use 10% or 20% as test set and the remaining fortraining) 
+and use cross-validation 
+(e.g. Leave-on-Out or Leave-10%-Out) 
+to estimate the number of needed latent variables in your predictive model. 
+Expected plot scatterplot of your model predictions for the test set of the dependent variable (the modelled property) versus the experimental (real, observed) value.
+
+Useful sources
+
+For general knowledge about pharmacology: Rang & Dale, ISBN
+9780702053627, in that edition Chapter 7 en 60 are of interest
+For general knowledge about QSAR, e.g.:
+Varnek & Tropsha, Chemoinformatics approaches to virtual screening
+Ch. 6 of Kahn’s Recent Trends on QSAR in the Pharmaeutical Perceptions
+(ebook)
+R Markdown: https://rmarkdown.rstudio.com/
+Cheatsheet: https://www.rstudio.com/wpcontent/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf
+PLS package for R: https://cran.r-project.org/web/packages/pls/
+Vignette: https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf
+Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
+American Chemical Society. 1947 Jan;69(1):17–20.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set up libraries required for the assignment
+
+```{r}
+library("rcdk")
+```
+
+
