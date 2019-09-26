@@ -94,6 +94,32 @@ plot(gas1, "loadings", comps = 1:2, legendpos = "topleft",  labels = "numbers", 
 abline(h = 0)
 ```
 
+A fitted model is often used to predict the response values of new observations. 
+The following predicts responses for the 10 observations in gasTest, using 2 components:
+```{r}
+predict(gas1, ncomp = 2, newdata = gasTest)
 
+```
+Because we know the true response values for these samples, we can calculate the test set
+RMSEP:
+```{r}
+RMSEP(gas1, newdata = gasTest)
+```
+=============================
+##Formulas and data frames
 
-
+The pls package has a formula interface that works like the formula interface in R's standard lm functions, in most ways. 
+This section gives a short description of formulas and dataframes as they apply to pls. More information on formulas can be found in the lm help file,
+in Chapter 11 of 'An Introduction to R', and in Chapter 2 of 'The White Book' [ref:John M. Chambers and Trevor J. Hastie. Statistical Models in S. Chapman & Hall,
+London, 1992.]. 
+Formulas
+=======
+A formula consists of a left hand side (lhs), a tilde (~), and a right hand side (rhs).
+The lhs consists of a single term, representing the response(s). 
+The rhs consists of one or more terms separated by +, representing the regressor(s).
+The intercept is handled automatically and doesn't need to be specified.
+The terms might be a matrix, a numeric vector or a factor (a factor should not be used
+as the response).
+If the response term is a matrix, a multi-response model is fit.
+In pls, the RHS quite often consists of a single term, representing a matrix regressor: 
+y ~ X.
