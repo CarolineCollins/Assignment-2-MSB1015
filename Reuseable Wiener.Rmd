@@ -52,6 +52,7 @@ PLS package for R: https://cran.r-project.org/web/packages/pls/
 Vignette: https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf
 Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
 American Chemical Society. 1947 Jan;69(1):17–20.
+The WikiData SPARQL endpoint is https://query.wikidata.org/bigdata/namespace/wdq/sparql 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -61,6 +62,33 @@ Set up libraries required for the assignment
 
 ```{r}
 library("rcdk")
+library(WikidataQueryServiceR)
 ```
 
+STEP 1 EXECUTE QUERY
+Using the R package WikidataQueryServiceR. Maintaining the SPARQL query syntax.
+The first query checks for any entries still waiting for their  boiling point statements to be entered in WikiData.
+The second query returns the names and id's of the compounds, their canonical SMILES chemical structure, and their boiling point.
 
+```{r}
+sparql_query_missingbp <- 'SELECT DISTINCT ?anes ?anesLabel ?CC ?bp
+WHERE {
+    ?anes wdt:P31/wdt:P279* wd:Q41581 .
+    ?anes wdt:P233 ?CC .
+    MINUS {?anes wdt:P2102 ?bp .}
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
+}'
+results_missingbp = query_wikidata(sparql_query_missingbp)
+```
+```{r}
+sparql_query <- 'SELECT DISTINCT ?anes ?anesLabel ?CC ?bp
+WHERE {
+    ?anes wdt:P31/wdt:P279* wd:Q41581 .
+    ?anes wdt:P233 ?CC .
+    ?anes wdt:P2102 ?bp .
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
+}'
+results_bp = query_wikidata(sparql_query)
+```
+STEP 2 MULTIVARIATE STATISTICS
+STEP 3 VISUALISATION
