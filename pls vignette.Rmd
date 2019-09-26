@@ -112,6 +112,7 @@ The pls package has a formula interface that works like the formula interface in
 This section gives a short description of formulas and dataframes as they apply to pls. More information on formulas can be found in the lm help file,
 in Chapter 11 of 'An Introduction to R', and in Chapter 2 of 'The White Book' [ref:John M. Chambers and Trevor J. Hastie. Statistical Models in S. Chapman & Hall,
 London, 1992.]. 
+
 Formulas
 =======
 A formula consists of a left hand side (lhs), a tilde (~), and a right hand side (rhs).
@@ -123,3 +124,138 @@ as the response).
 If the response term is a matrix, a multi-response model is fit.
 In pls, the RHS quite often consists of a single term, representing a matrix regressor: 
 y ~ X.
+It is also possible to specify transformations of the variables. 
+For instance, log(y) ~ msc(Z) 
+If the transformations contain symbols that are interpreted in the
+formula handling, e.g., +, * or ^, then the terms should be protected with the I() function, like this: y ~ x1 + I(x2 + x3). 
+This specifies two regressors: x1, and the sum of x2 and x3.
+
+Dataframes
+=========
+The fit functions first look for the specified variables in a supplied data frame, 
+and it is advisable to collect all variables there. 
+This makes it easier to know what data has been used
+for fitting, to keep different variants of the data around, and to predict new data.
+To create a dataframe, one can use the data.frame function: 
+if v1, v2 and v3 are factors
+or numeric vectors, 
+mydata <- data.frame(y = v1, a = v2, b = v3) will result in a data
+frame with variables named y, a and b.
+multi-response models require a matrix as the
+response term. If Z is a matrix, it has to be protected by the 'protect function' I() in calls
+to data.frame: mydata <- data.frame(..., Z = I(Z)). Otherwise, it will be split into
+separate variables for each column, and there will be no variable called Z in the data frame,
+so we cannot use Z in the formula. One can also add the matrix to an existing data frame:
+eg mydata <- data.frame(...)
+   mydata$Z <- Z
+This will also prevent Z from being split into separate variables. Finally, one can use cbind
+to combine vectors and matrices into matrices on the fly in the formula. This is most useful for the response, 
+e.g., cbind(y1, y2) ~ X.
+Variables in a dataframe can be accessed with the $ operator, e.g., mydata$y. However,
+the pls functions access the variables automatically, so the user should never use $ in formulas.
+
+##Fitting models
+The main functions for fitting models are pcr and plsr. (They are simply wrappers for the
+function mvr, selecting the appropriate fit algorithm). We will use plsr in the examples in
+this section, but everything could have been done with pcr (or mvr).
+In its simplest form, the function call for fitting models is plsr(formula, ncomp, data)
+(where plsr can be substituted with pcr or mvr). The argument formula is a formula as
+described above, ncomp is the number of components one wishes to fit, and data is the data
+frame containing the variables to use in the model. The function returns a fitted model
+(an object of class "mvr") which can be inspected (Section 7) or used for predicting new
+observations (Section 8). For instance:
+```{r}
+ dens1 <- plsr(density ~ NIR, ncomp = 5, data = yarn)
+
+```
+
+If the response term of the formula is a matrix, a multi-response model is fit, e.g.,
+```{r}
+dim(oliveoil$sensory)
+
+```
+
+```{r}
+plsr(sensory ~ chemical, data = oliveoil)
+```
+
+The argument ncomp is optional. If it is missing, the maximal possible number of components are used. Also data is optional, and if it is missing, the variables specified in the formula is searched for in the global environment (the user's workspace). Usually, it is preferable to
+keep the variables in data frames, but it can sometimes be convenient to have them in the
+global environment. If the variables reside in a data frame, 
+e.g. yarn, do not be tempted to
+use formulas like yarn$density ~ yarn$NIR! Use density ~ NIR and specify the data frame
+with data = yarn as above.
+There are facilities for working interactively with models. To use only part of the samples
+in a data set, for instance the first 20, one can use arguments subset = 1:20 or data =
+yarn[1:20,]. Also, if one wants to try different alternatives of the model, one can use the
+function update. For instance
+```{r}
+trainind <- which(yarn$train == TRUE)
+dens2 <- update(dens1, subset = trainind)
+dens3 <- update(dens1, ncomp = 10)
+
+```
+dens2 is a refit of the model dens1 using only the observations which are marked as TRUE in yarn$train,
+and dens3 is the result of changing the number of components to 10.
+Other arguments, such as formula, can also be
+changed with update. This can save a bit of typing when working interactively with models
+(but it doesn't save computing time; the model is refitted each time).
+===
+Missing data can sometimes be a problem. The PLSR and PCR algorithms currently
+implemented in pls do not handle missing values intrinsically, so observations with missing
+values must be removed. This can be done with the na.action argument. With na.action
+= na.omit (the default), any observation with missing values will be removed from the model
+completely. With na.action = na.exclude, they will be removed from the fitting process,
+but included as NAs in the residuals and fitted values. If you want an explicit error when there
+are missing values in the data, use na.action = na.fail. The default na.action can be set
+with options(), e.g., options(na.action = quote(na.fail)).
+Standardisation and other pre-treatments of predictor variables are often called for. In
+pls, the predictor variables are always centered, as a part of the fit algorithm. Scaling can
+be requested with the scale argument. If scale is TRUE, each variable is standardised by
+dividing it by its standard deviation, and if scale is a numeric vector, each variable is divided
+by the corresponding number. For instance, this will fit a model with standardised chemical
+measurements:
+```{r}
+olive1 <- plsr(sensory ~ chemical, scale = TRUE, data = oliveoil)
+```
+
+There are other arguments that can be given in the fit call: validation is for selecting
+validation, and ... is for sending arguments to the underlying functions, notably the crossvalidation function mvrCv. For the other arguments, see ?mvr.
+
+##Choosing the number of components with cross-validation
+Cross-validation, commonly used to determine the optimal number of components to take
+into account, is controlled by the validation argument in the modelling functions (mvr,
+plsr and pcr). The default value is "none". Supplying a value of "CV" or "LOO" will cause
+the modelling procedure to call mvrCv to perform cross-validation; "LOO" provides leaveone-out cross-validation, whereas "CV" divides the data into segments. Default is to use ten
+segments, randomly selected, but also segments of consecutive objects or interleaved segments
+(sometimes also referred to as 'Venetian blinds') are possible through the use of the argument
+segment.type. One can also specify the segments explicitly with the argument segments;
+see ?mvrCv for details.
+When validation is performed in this way, the model will contain an element comprising
+information on the out-of-bag predictions (in the form of predicted values, as well as MSEP
+and R2 values). As a reference, the MSEP error using no components at all is calculated as
+well. The validation results can be visualised using the plottype = "validation" argument
+of the standard plotting function. 
+typically, one would select a number of components after which the cross-validation error does
+not show a significant decrease.
+The decision on how many components to retain will to some extent always be subjective.
+However, especially when building large numbers of models (e.g., in simulation studies), it can
+be crucial to have a consistent strategy on how to choose the "optimal" number of components.
+Two such strategies have been implemented in function selectNcomp. 
+1. The first is based on the
+so-called one-sigma heuristic and consists of choosing the model with fewest components
+that is still less than one standard error away from the overall best model.
+2. The second strategy
+employs a permutation approach, and basically tests whether adding a new component is
+beneficial at all [21]. It is implemented backwards, again taking the global minimum in
+the crossvalidation curve as a starting point, and assessing models with fewer and fewer
+components: as long as no significant deterioration in performance is found (by default on
+the ?? = 0.01 level), the algorithm continues to remove components. Applying the function is
+quite straightforward:
+```{r}
+gas2 <- plsr(octane ~ msc(NIR), ncomp = 10, data = gasTrain)
+predict(gas2, ncomp = 3, newdata = gasTest)
+ncomp.onesigma <- selectNcomp(gas2, method = "onesigma", plot = TRUE, ylim = c(.18, .6))
+ncomp.permut <- selectNcomp(gas2, method = "randomization", plot = TRUE, ylim = c(.18, .6))
+```
+
