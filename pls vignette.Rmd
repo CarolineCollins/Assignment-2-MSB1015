@@ -1,0 +1,13 @@
+---
+title: "pls vignette"
+author: "Caroline Collins 6192527"
+date: "26 September 2019"
+output: html_document
+---
+Following the vignette at
+https://cran.r-project.org/web/packages/pls/vignettes/pls-manual.pdf
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+There is some sample data loaded in the pls package.
+
