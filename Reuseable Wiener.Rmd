@@ -44,14 +44,15 @@ For general knowledge about pharmacology: Rang & Dale, ISBN
 9780702053627, in that edition Chapter 7 en 60 are of interest
 For general knowledge about QSAR, e.g.:
 Varnek & Tropsha, Chemoinformatics approaches to virtual screening
-Ch. 6 of Kahn’s Recent Trends on QSAR in the Pharmaeutical Perceptions
+Ch. 6 of Kahn�s Recent Trends on QSAR in the Pharmaeutical Perceptions
 (ebook)
+Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
+American Chemical Society. 1947 Jan;69(1):17-20.
 R Markdown: https://rmarkdown.rstudio.com/
 Cheatsheet: https://www.rstudio.com/wpcontent/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf
 PLS package for R: https://cran.r-project.org/web/packages/pls/
 Vignette: https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf
-Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
-American Chemical Society. 1947 Jan;69(1):17–20.
+
 The WikiData SPARQL endpoint is https://query.wikidata.org/bigdata/namespace/wdq/sparql 
 
 ```{r setup, include=FALSE}
@@ -69,6 +70,12 @@ STEP 1 EXECUTE QUERY
 Using the R package WikidataQueryServiceR. Maintaining the SPARQL query syntax.
 The first query checks for any entries still waiting for their  boiling point statements to be entered in WikiData.
 The second query returns the names and id's of the compounds, their canonical SMILES chemical structure, and their boiling point.
+SMILES is a text string that represents the compound structure in 2D. ie. it psecifies elements, connectivity and bond order, but not the 3D position of each atom.
+Examples of SMILES:
+ethanol CCO
+ethylene C=C
+acetylene C#C
+2-propanol CC(O)C
 This third query is set up to deal with the complex structure of statements with units in Wikidata.
 'SELECT ?comp ?compLabel ?bp ?bpUnit ?bpUnitLabel WHERE {
   ?comp wdt:P31/wdt:P279* wd:Q41581 ;
@@ -99,5 +106,9 @@ WHERE {
 results_bp = query_wikidata(sparql_query)
 ```
 STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
+covariance
+normalise
+scale
+scores and loadings
 STEP 2b CROSS-VALIDATION
 STEP 3 VISUALISATION Scatterplot
