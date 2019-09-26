@@ -98,5 +98,6 @@ WHERE {
 }'
 results_bp = query_wikidata(sparql_query)
 ```
-STEP 2 MULTIVARIATE STATISTICS
-STEP 3 VISUALISATION
+STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
+STEP 2b CROSS-VALIDATION
+STEP 3 VISUALISATION Scatterplot
