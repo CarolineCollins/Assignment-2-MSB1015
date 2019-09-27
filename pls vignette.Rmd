@@ -40,6 +40,9 @@ A typical way of fitting a PLSR model is
 gas1 <- plsr(octane ~ NIR, ncomp = 10, data = gasTrain, validation = "LOO")
 ```
 This fits a model with 10 components, 
+THE MODEL PARAMETER LATENT VARIABLES NEEDS TO BE SET BY ME
+WHAT IS THE BEST NUMBER OF LATENT VARIABLES TO USE IN THIS MODEL?
+
 and includes leave-one-out (LOO) cross-validated predictions. 
 We can get an overview of the fit and validation results with the summary method:
 ```{r}
@@ -54,9 +57,22 @@ For a LOO CV, there is virtually no difference between adjCV and CV.
 It is often simpler to judge the RMSEPs by plotting them:
 ```{r}
 plot(RMSEP(gas1), legendpos = "topright")
-
 ```
-This "elbow plot" plots the estimated RMSEPs as functions of the number of components (Figure 2).
+This "elbow plot" plots the estimated RMSEPs as functions of the number of components.
+THE MODEL PARAMETER LATENT VARIABLES NEEDS TO BE SET BY ME
+WHAT IS THE BEST NUMBER OF LATENT VARIABLES TO USE IN THIS MODEL?
+JUDGE THIS FROM AN ELBOW PLOT LIKE THIS ONE.
+AT THE ELBOW WE HAVE both:
+1. REDUCED ERROR (how to measure the error?)
+                  (Root Mean Squared Error of Prediction (RMSEP)) and
+2. STOPPED ADDING COMPONENTS BEFORE WE REACH AN OVERFITTING SITUATION.
+
+##Measuring error
+On what data? - 
+Training data: e.g. Rsquared
+Test data: e.g. RMSE - 
+Cross validation: e.g. Qsquared
+
 The legendpos argument adds a legend at the indicated position. 
 Two components seem to be enough to give a good RMSEP of 0.297. 
 As mentioned in the introduction, the main practical difference between PCR and PLSR is that PCR often needs more components than PLSR to achieve the same prediction error. 
@@ -85,7 +101,6 @@ plot(gas1, plottype = "scores", comps = 1:3)
 The explained variances can be extracted explicitly with
 ```{r}
 explvar(gas1)
-
 ```
 The loading plot is much used for interpretation purposes, for instance to look
 for known spectral peaks or profiles. The labels = "numbers" argument makes the plot function try to interpret the variable names as numbers, and use them as x axis labels.
@@ -98,7 +113,6 @@ A fitted model is often used to predict the response values of new observations.
 The following predicts responses for the 10 observations in gasTest, using 2 components:
 ```{r}
 predict(gas1, ncomp = 2, newdata = gasTest)
-
 ```
 Because we know the true response values for these samples, we can calculate the test set
 RMSEP:
@@ -322,6 +336,10 @@ to print both types of information.
 plot(gas1, plottype = "correlation", ncomp=1:3, legendpos = "bottomleft",labels = "numbers", xlab = "nm")
 ```
 ##8 Predicting new observations
+
+THE MODEL PARAMETER LATENT VARIABLES NEEDS TO BE SET BY ME
+HOW TO SELECT THIS NUMBER
+
 Fitted models are often used to predict future observations, and pls implements a predict
 method for PLSR and PCR models. The most common way of calling this function is
 predict(mymod, ncomp = myncomp, newdata = mynewdata), where mymod is a fitted model,
