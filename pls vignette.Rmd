@@ -258,4 +258,218 @@ predict(gas2, ncomp = 3, newdata = gasTest)
 ncomp.onesigma <- selectNcomp(gas2, method = "onesigma", plot = TRUE, ylim = c(.18, .6))
 ncomp.permut <- selectNcomp(gas2, method = "randomization", plot = TRUE, ylim = c(.18, .6))
 ```
+```{r}
+gas2.cv <- crossval(gas2, segments = 10)
 
+summary(gas2.cv, what = "validation")
+
+```
+```{r}
+plot(MSEP(gas2.cv), legendpos="topright")
+```
+
+##7 Inspecting fitted models
+A closer look at the fitted model may reveal interesting agreements or disagreements with
+what is known about the relations between X and Y. Several functions are implemented in
+pls for plotting, extracting and summarising model components.
+The regression coefficients can be visualised using plottype = "coef" in the plot method,
+or directly through function coefplot. This allows simultaneous plotting of the regression
+vectors for several different numbers of components at once. The regression vectors for the
+gasoline data set using MSC
+```{r}
+plot(gas1, plottype = "coef", ncomp=1:3, legendpos = "bottomleft",labels = "numbers", xlab = "nm")
+
+```
+Note that the coefficients for two components and three components are similar. This is
+because the third component contributes little to the predictions. The RMSEPs 
+and predictions  for two and three components are quite similar.
+Scores and loadings can be plotted using functions scoreplot and loadingplot, respectively. One can indicate the number of
+components with the comps argument; if more than two components are given, plotting the
+scores will give a pairs plot, otherwise a scatter plot. For loadingplot, the default is to use
+line plots.
+Finally, a 'correlation loadings' plot (function corrplot, or plottype = "correlation"
+in plot) 
+shows the correlations between each variable and the selected components. These plots are scatter plots of two sets of scores with concentric circles of radii given
+by radii. Each point corresponds to an X variable. The squared distance between the point
+and the origin equals the fraction of the variance of the variable explained by the components
+in the panel. The default values for radii correspond to 50% and 100% explained variance,
+respectively
+The plot functions accept most of the ordinary plot parameters, such as col and pch. If
+the model has several responses or one selects more than one model size, e.g. ncomp = 4:6,
+in some plot functions (notably prediction plots (see below), validation plots and coefficient
+plots) the plot window will be divided and one plot will be shown for each combination of
+response and model size. The number of rows and columns are chosen automatically, but can
+be specified explicitly with arguments nRows and nCols. If there are more plots than fit the
+plot window, one will be asked to press return to see the rest of the plots.
+##7.2 Extraction
+Regression coefficients can be extracted using the generic function coef; the function takes
+several arguments, indicating the number of components to take into account, and whether
+the intercept is needed (default is FALSE).
+Scores and loadings can be extracted using functions scores and loadings for X, and
+Yscores and Yloadings for Y. These also return the percentage of variance explained as
+attributes. In PLSR, weights can be extracted using the function loading.weights. When
+applied to a PCR model, the function returns NULL.
+Note that commands like plot(scores(gas1)) are perfectly correct, and lead to exactly
+the same plots as using scoreplot.
+##7.3 Summaries
+The print method for an object of class "mvr" shows the regression type used, perhaps
+indicating the form of validation employed, and shows the function call. The summary method
+gives more information: it also shows the amount of variance explained by the model (for all
+choices of a, the number of latent variables). The summary method has an additional argument
+(what) to be able to focus on the training phase or validation phase, respectively. Default is
+to print both types of information.
+```{r}
+plot(gas1, plottype = "correlation", ncomp=1:3, legendpos = "bottomleft",labels = "numbers", xlab = "nm")
+```
+##8 Predicting new observations
+Fitted models are often used to predict future observations, and pls implements a predict
+method for PLSR and PCR models. The most common way of calling this function is
+predict(mymod, ncomp = myncomp, newdata = mynewdata), where mymod is a fitted model,
+myncomp specifies the model size(s) to use, and mynewdata is a data frame with new X observations. The data frame can also contain response measurements for the new observations,
+which can be used to compare the predicted values to the measured ones, or to estimate the
+overall prediction ability of the model. If newdata is missing, predict uses the data used to
+fit the model, i.e., it returns fitted values.
+If the argument ncomp is missing, predict returns predictions for models with 1 component, 2 components, . . ., A components, where A is the number of components used when
+fitting the model. Otherwise, the model size(s) listed in ncomp are used. For instance, to get
+predictions from the model built in Section 3, with two and three components, one would use
+
+```{r}
+predict(gas1, ncomp = 2:3, newdata = gasTest[1:5,])
+
+```
+(We predict only the five first test observations, to save space.) The predictions with two and
+three components are quite similar. This could be expected, given that the regression vectors
+(Figure 7) as well as the estimated RMSEPs for the two model sizes were similar.
+One can also specify explicitly which components to use when predicting. This is done by
+specifying the components in the argument comps. (If both ncomp and comps are specified,
+comps takes precedence over ncomp.) For instance, to get predictions from a model with only
+component 2, one can use
+```{r}
+predict(gas1, comps = 2, newdata = gasTest[1:5,])
+
+```
+
+The results are different from the predictions with two components (i.e., components one
+and two) above. (The intercept is always included in the predictions. It can be removed by
+subtracting mymod$Ymeans from the predicted values.)
+The predict method returns a three-dimensional array, in which the entry (i, j, k) is
+the predicted value for observation i, response j and model size k. Note that singleton
+dimensions are not dropped, so predicting five observations for a uni-response model with
+ncomp = 3 gives an 5 × 1 × 1 array, not a vector of length five. This is to make it easier
+to distinguish between predictions from models with one response and predictions with one
+model size. (When using the comps argument, the last dimension is dropped, because the
+predictions are always from a single model.) One can drop the singleton dimensions explicitly
+by using drop(predict(...)):
+
+```{r}
+drop(predict(gas1, ncomp = 2:3, newdata = gasTest[1:5,]))
+
+```
+##missing values
+Missing values in newdata are propagated to NAs in the predicted response, by default.
+This can be changed with the na.action argument. See ?na.omit for details.
+The newdata does not have to be a data frame. Recognising the fact that the right hand
+side of PLSR and PCR formulas very often are a single matrix term, the predict method
+allows one to use a matrix as newdata, so instead of
+```{r}
+# newdataframe <- data.frame(X = newmatrix)
+# predict(..., newdata = newdataframe)
+
+```
+you can use
+```{r}
+# predict(..., newdata = newmatrix)
+```
+
+However, there are a couple of caveats: First, this only works in predict. Other functions
+that take a newdata argument (such as RMSEP) must have a data frame (because they also
+need the response values). Second, when newdata is a data frame, predict is able to perform
+more tests on the supplied data, such as the dimensions and types of variables. Third,
+with the exception of scaling (specified with the scale argument when fitting the model),
+any transformations or coding of factors and interactions have to be performed manually if
+newdata is a matrix.
+It is often interesting to predict scores from new observations, instead of response values.
+This can be done by specifying the argument type = "scores" in predict. One will then
+get a matrix with the scores corresponding to the components specified in comps (ncomp is
+accepted as a synonym for comps when predicting scores).
+Predictions can be plotted with the function predplot. This function is generic, and
+can also be used for plotting
+```{r}
+predplot(gas1, ncomp = 2, newdata = gasTest, asp = 1, line = TRUE)
+
+```
+
+This plots predicted (with 2 components) versus measured response values. (Note that
+newdata must be a data frame with both X and Y variables.)
+##9.3 Package design
+The pls package is designed such that an interface function mvr handles the formula and
+data, and calls an underlying fit function (and possibly a cross-validation function) to do the
+real work. There are several reasons for this design: it makes it easier to implement new
+algorithms, one can easily skip the time-consuming formula and data handling in computingintensive applications (simulations, etc.), and it makes it easier to use the pls package as a
+building block in other packages.
+The plotting facilities are implemented similarly: the plot method simply calls the correct
+plot function based on the plottype argument. Here, however, the separate plot functions are
+meant to be callable interactively, because some people like to use the generic plot function,
+while others like to use separate functions for each plot type. There are also plot methods
+for some of the components of fitted models that can be extracted with extract functions, like
+score and loading matrices. Thus there are several ways to get some plots, e.g.:
+
+```{r}
+plot(mymod, plottype = "scores", ...)
+scoreplot(mymod, ...)
+plot(scores(mymod), ...)
+```
+
+
+One example of a package that uses pls is lspls, available on CRAN. In that package LS is
+combined with PLS in a regression procedure. It calls the fit functions of pls directly, and also
+uses the plot functions to construct score and loading plots. There is also the plsgenomics
+package, which includes a modified version of (an earlier version of) the SIMPLS fit function
+simpls.fit.
+
+##9.4 Calling fit functions directly
+The underlying fit functions are called kernelpls.fit, oscorespls.fit, and simpls.fit
+for the PLSR methods, and svdpc.fit for the PCR method. They all take arguments X, Y,
+ncomp, and stripped. Arguments X, Y, and ncomp specify X and Y (as matrices, not data
+frames), and the number of components to fit, respectively. The argument stripped defaults
+to FALSE. When it is TRUE, the calculations are stripped down to the bare minimum required
+for returning the X means, Y means, and the regression coefficients. This is used to speed
+up cross-validation procedures.
+The fit functions can be called directly, for instance when one wants to avoid the overhead
+of formula and data handling in repeated fits. As an example, this is how a simple leave-oneout cross-validation for a uni-response-model could be implemented, using the SIMPLS:
+```{r}
+X <- gasTrain$NIR
+Y <- gasTrain$octane
+ncomp <- 5
+cvPreds <- matrix(nrow = nrow(X), ncol = ncomp)
+for (i in 1:nrow(X)) {
+fit <- simpls.fit(X[-i,], Y[-i], ncomp = ncomp, stripped = TRUE)
+cvPreds[i,] <- (X[i,] - fit$Xmeans) %*% drop(fit$coefficients) +
+fit$Ymeans
+}
+```
+
+The RMSEP of the cross-validated predictions are
+
+```{r}
+sqrt(colMeans((cvPreds - Y)^2))
+
+```
+
+which can be seen to be the same as the (unadjusted) CV results for the gas1 model in
+Section 3.
+##9.5 Formula handling in more detail
+The handling of formulas and variables in the model fitting is very similar to what happens in
+the function lm: The variables specified in the formula are looked up in the data frame given
+in the data argument of the fit function (plsr, pcr or mvr), or in the calling environment
+if not found in the data frame. Factors are coded into one or more of columns, depending
+on the number of levels, and on the contrasts option. All (possibly coded) variables are then
+collected in a numerical model matrix. This matrix is then handed to the underlying fit or
+cross-validation functions. A similar handling is used in the predict method.
+The intercept is treated specially in pls. After the model matrix has been constructed,
+the intercept column is removed. This ensures that any factors are coded as if the intercept
+was present. The underlying fit functions then center the rest of the variables as a part of the
+fitting process. (This is intrinsic to the PLSR and PCR algorithms.) The intercept is handled
+separately. A consequence of this is that explicitly specifying formulas without the intercept
+(e.g., y ~ a + b - 1) will only result in the coding of any factors to change; the intercept
+will still be fitted.
