@@ -85,6 +85,17 @@ This third query is set up to deal with the complex structure of statements with
         ] .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
 }'
+This query is from the lecture slides and returns descriptors
+whatever they are
+
+```{r}
+sparql_query_descr <- 'SELECT * WHERE {?s ?p ?o . } LIMIT10'
+resultsdescr = query_wikidata(sparql_query_descr)
+resultsdescr
+# is.data.frame(sparql_query_descr$results)
+```
+
+
 ```{r}
 sparql_query_missingbp <- 'SELECT DISTINCT ?anes ?anesLabel ?CC ?bp
 WHERE {
