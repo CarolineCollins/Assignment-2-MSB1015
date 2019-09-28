@@ -4,43 +4,43 @@ author: "Caroline Collins 6192527"
 date: "25 September 2019"
 output: html_document
 ---
+##Note 
+As a prerequisite, this notebook needs a certain Wikidata query R package which you can find here: https://github.com/bearloga/WikidataQueryServiceR
 
-Project Synopsis
+##Project Synopsis
 
-Data analysis is a long process that does not merely involve running a statistical
-analysis, but starts with the raw, experimental data that needs to be processed and
-cleaned, the actual analysis or modelling, and the creation of visualization of the
+Before running a statistical analysis, we began with some WikiData data that needed to be completed, referenced, inspected, processed and cleaned.
+After this came the analysis and modelling, and, finally visualisation of the
 results. 
-During the analysis you will likely have to play with the many parameters
-you have to select, to get meaningful outcomes. All this needs to be documented,
-allowing you and others to easily reproduce your results. 
-In this assignment you will use Markdown and R to make an interactive notebook where you combine explanation of the steps you perform, computation, and visualization of the results.
+The project process taught us that there are many choices to be made about methods, parameters and variables.
+I aimed to document this process in the right level of detail to render the project reproducible. This includes justifying many of the modelling choices. 
+The following interactive notebook is an explanation of the steps I performed.
 
-Computational Chemistry Background
+##Computational Chemistry Background
 
-Harry Wiener realized in 1947 that if physicochemical properties are determined by
-the chemical structure, then the latter must be correlated to the first. In that year he
-published work where he made a correlation model that linked 
+In 1947 Harry Wiener showed a correlation between the physicochemical properties of organic compounds and their chemical structure.
+He made a correlation model that linked 
+structural features of compounds
+with boiling points. 
 
-structural features
-with boiling points, 
 
-starting a new era in computational chemistry. 
-Making such regression models is now routine in the life sciences, and not only for
-physicochemical properties but also biochemical properties.
-In this assignment you will use SPARQL to query physicochemical properties from
-Wikidata for a series of chemical properties and make a (PLS) Partial Least Squares model
-(or similar) in an R Markdown notebook with RStudio. 
-You will have to use a training-test set split 
-(e.g. use 10% or 20% as test set and the remaining fortraining) 
-and use cross-validation 
+##Brief Description of the Assignment
+
+In this assignment we use SPARQL to query physicochemical properties from Wikidata for a series of chemical properties,
+then make a (PLS) Partial Least Squares model (or similar) 
+in an R Markdown notebook with RStudio. 
+Note that to correctly use the model for prediction it is necessary to split
+the dataset into a training and a test set.
+(using 10% or 20% as test set and the remaining fortraining) 
+and also to use cross-validation 
 (e.g. Leave-on-Out or Leave-10%-Out) 
-to estimate the number of needed latent variables in your predictive model. 
-Expected plot scatterplot of your model predictions for the test set of the dependent variable (the modelled property) versus the experimental (real, observed) value.
+An elbow plot will help to estimate the optimal number of latent variables in the predictive model. 
+A scatterplot of the model predictions for the test set of the dependent variable (the modelled property) versus the experimental (real, observed) value will serve as a visualisation of the accuracy of the model predictions.
+This assignment is part of weeks 4 and 5 of Scientific Programming on the Master's Systems Biology at Maastricht University. ( https://www.maastrichtuniversity.nl/education/master/master-systems-biology )
 
-Useful sources
+##Useful sources
 
-For general knowledge about pharmacology: Rang & Dale, ISBN
+Pharmacology: Rang & Dale, ISBN
 9780702053627, in that edition Chapter 7 en 60 are of interest
 For general knowledge about QSAR, e.g.:
 Varnek & Tropsha, Chemoinformatics approaches to virtual screening
@@ -59,67 +59,126 @@ The WikiData SPARQL endpoint is https://query.wikidata.org/bigdata/namespace/wdq
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Set up libraries required for the assignment
+##STEP 0 Set up libraries required for the assignment
 
 ```{r}
 library("rcdk")
 library(WikidataQueryServiceR)
 ```
 
-STEP 1 EXECUTE QUERY
-Using the R package WikidataQueryServiceR. Maintaining the SPARQL query syntax.
+##STEP 1 EXECUTE QUERY
+Using the R package WikidataQueryServiceR. 
+Maintaining the SPARQL query syntax.
 The first query checks for any entries still waiting for their  boiling point statements to be entered in WikiData.
-The second query returns the names and id's of the compounds, their canonical SMILES chemical structure, and their boiling point.
-SMILES is a text string that represents the compound structure in 2D. ie. it psecifies elements, connectivity and bond order, but not the 3D position of each atom.
+
+SMILES is a text string that represents the compound structure in 2D. ie. it specifies elements, connectivity and bond order, but not the 3D position of each atom.
 Examples of SMILES:
 ethanol CCO
 ethylene C=C
 acetylene C#C
 2-propanol CC(O)C
-This third query is set up to deal with the complex structure of statements with units in Wikidata.
-'SELECT ?comp ?compLabel ?bp ?bpUnit ?bpUnitLabel WHERE {
-  ?comp wdt:P31/wdt:P279* wd:Q41581 ;
-        p:P2102 [
-          ps:P2102 ?bp ;
-          psv:P2102/wikibase:quantityUnit  ?bpUnit
-        ] .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-}'
-This query is from the lecture slides and returns descriptors
-whatever they are
 
+
+P31 is an instance of
+P279 is is a subclass of
+Q41581 an alkane is an acyclic saturated hydrocarbon
+P233 is the canonical SMILES
+P2102 is the boiling point
 ```{r}
-sparql_query_descr <- 'SELECT * WHERE {?s ?p ?o . } LIMIT10'
-resultsdescr = query_wikidata(sparql_query_descr)
-resultsdescr
-# is.data.frame(sparql_query_descr$results)
-```
-
-
-```{r}
-sparql_query_missingbp <- 'SELECT DISTINCT ?anes ?anesLabel ?CC ?bp
+sparql_query_missingbp <- 'SELECT DISTINCT ?alkanes ?alkanesLabel ?SMILES ?boilingpoint
 WHERE {
-    ?anes wdt:P31/wdt:P279* wd:Q41581 .
-    ?anes wdt:P233 ?CC .
-    MINUS {?anes wdt:P2102 ?bp .}
+    ?alkanes wdt:P31/wdt:P279* wd:Q41581 .
+    ?alkanes wdt:P233 ?SMILES .
+    MINUS {?alkanes wdt:P2102 ?boilingpoint .}
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
 }'
 results_missingbp = query_wikidata(sparql_query_missingbp)
 ```
 ```{r}
-sparql_query <- 'SELECT DISTINCT ?anes ?anesLabel ?CC ?bp
+sparql_query <- 'SELECT DISTINCT ?alkanes ?alkanesLabel ?boilingpoint 
 WHERE {
-    ?anes wdt:P31/wdt:P279* wd:Q41581 .
-    ?anes wdt:P233 ?CC .
-    ?anes wdt:P2102 ?bp .
+    ?alkanes wdt:P31/wdt:P279* wd:Q41581 .
+    
+    ?alkanes wdt:P2102 ?boilingpoint .
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
 }'
-results_bp = query_wikidata(sparql_query)
+results_first = query_wikidata(sparql_query)
 ```
-STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
+first eyeball of the data
+```{r}
+range(results_first$boilingpoint)
+```
+That range has a suspiciously low value. In Kelvin expect all non-negative!
+Let's check out the units of the boiling points and 
+convert anything non-Kelvin to Kelvin.
+
+The following query is altered from the one provided by Egon  "set up to deal with the complex structure of statements with units in Wikidata." ie it reaches right down into the hierarchical structure of the WikiData  data to extract the various units entered by different WikiData users, and also a human readable label for those units.
+```{r}
+units_query <- 'SELECT DISTINCT ?alkane ?alkaneLabel ?SMILES ?boilingpoint ?bpUnit ?bpUnitLabel WHERE {
+  ?alkane wdt:P31/wdt:P279* wd:Q41581 .
+  ?alkane wdt:P233 ?SMILES ;
+        p:P2102 [
+          ps:P2102 ?boilingpoint ;
+          psv:P2102/wikibase:quantityUnit  ?bpUnit
+        ] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+}'
+results_bp = query_wikidata(units_query)
+possible_units <- unique(results_bp$bpUnitLabel)
+possible_units
+```
+
+getting the boiling points out of the WikiData DB
+the problem is that some of them are in Celsius and others in Fahrenheit.
+Convert units and change unitlabels across the dataset.
+```{r}
+
+results_bp$boilingpoint[results_bp$bpUnitLabel == "degree Celsius"] <- results_bp$boilingpoint[results_bp$bpUnitLabel == "degree Celsius"] + 273.15
+results_bp$bpUnitLabel[results_bp$bpUnitLabel == "degree Celsius"] <- "kelvin"
+results_bp$boilingpoint[results_bp$bpUnitLabel == "degree Fahrenheit"] <- (results_bp$boilingpoint[results_bp$bpUnitLabel == "degree Fahrenheit"]-32)*5/9 + 273.15
+results_bp$bpUnitLabel[results_bp$bpUnitLabel == "degree Fahrenheit"] <- "kelvin"
+```
+quick check
+```{r}
+unique(results_bp$bpUnitLabel)
+```
+```{r}
+head(results_bp$boilingpoint)
+```
+##Eyeball the data
+```{r}
+range(results_bp$boilingpoint)
+```
+```{r}
+plot.default(results_bp$boilingpoint)
+```
+Chemistry beginner's question:
+Does the length of the SMILES string correlate with the boiling point?
+```{r}
+plot(nchar(results_bp$SMILES),results_bp$boilingpoint)
+```
+the correlation between the boiling point and the string length of the SMILES looks good!!
+```{r}
+cor(nchar(results_bp$SMILES),results_bp$boilingpoint)
+```
+##Collect variables which we expect to be informative of boiling point
+try and translate the data that I have , in the form of SMILES, into what we need out of the database in order to do the regression. For this use R package rcdk.
+ie the descriptors that you derive from the SMILES from QSAR(?) using rcdk
+(parse.smiles function)
+These will give a collection of descriptors
+which you can use as variables,
+then generate latent variables with PLS.
+##Descriptors
+There is a list of descriptors here https://cdk.github.io/cdk/1.5/docs/api/org/openscience/cdk/qsar/descriptors/molecular/package-tree.html
+I can also learn about descriptors in the rcdk documentation.
+https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html
+
+##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
+##Split dataset into Trainng and Test
+Things to bear in mind:
 covariance
 normalise
 scale
 scores and loadings
-STEP 2b CROSS-VALIDATION
-STEP 3 VISUALISATION Scatterplot
+CROSS-VALIDATION method
+##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed
