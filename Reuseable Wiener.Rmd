@@ -85,21 +85,21 @@ Q41581 an alkane is an acyclic saturated hydrocarbon
 P233 is the canonical SMILES
 P2102 is the boiling point
 ```{r}
-sparql_query_missingbp <- 'SELECT DISTINCT ?alkanes ?alkanesLabel ?SMILES ?boilingpoint
+sparql_query_missingbp <- 'SELECT DISTINCT ?alkane ?alkaneLabel ?SMILES ?boilingpoint
 WHERE {
-    ?alkanes wdt:P31/wdt:P279* wd:Q41581 .
-    ?alkanes wdt:P233 ?SMILES .
-    MINUS {?alkanes wdt:P2102 ?boilingpoint .}
+    ?alkane wdt:P31/wdt:P279* wd:Q41581 .
+    ?alkane wdt:P233 ?SMILES .
+    MINUS {?alkane wdt:P2102 ?boilingpoint .}
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
 }'
 results_missingbp = query_wikidata(sparql_query_missingbp)
 ```
 ```{r}
-sparql_query <- 'SELECT DISTINCT ?alkanes ?alkanesLabel ?boilingpoint 
+sparql_query <- 'SELECT DISTINCT ?alkane ?alkaneLabel ?boilingpoint 
 WHERE {
-    ?alkanes wdt:P31/wdt:P279* wd:Q41581 .
+    ?alkane wdt:P31/wdt:P279* wd:Q41581 .
     
-    ?alkanes wdt:P2102 ?boilingpoint .
+    ?alkane wdt:P2102 ?boilingpoint .
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en"}
 }'
 results_first = query_wikidata(sparql_query)
