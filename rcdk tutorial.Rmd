@@ -175,6 +175,7 @@ to predict boiling points for the BP dataset.
 First we need a set of descriptors and so we evaluate all available descriptors. Also note that since a descriptor might belong to more than one category, we should obtain a unique set of descriptor names
 ```{r}
 descNames <- unique(unlist(sapply(get.desc.categories(), get.desc.names)))
+descNames
 ```
 
 For the current discussion we focus on a few, manually selected descriptors that we know will be related to boiling point.

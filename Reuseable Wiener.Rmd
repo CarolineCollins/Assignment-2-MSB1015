@@ -52,6 +52,8 @@ R Markdown: https://rmarkdown.rstudio.com/
 Cheatsheet: https://www.rstudio.com/wpcontent/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf
 PLS package for R: https://cran.r-project.org/web/packages/pls/
 Vignette: https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf
+rcdk package for R:
+Vignette/tutorial : https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html
 
 The WikiData SPARQL endpoint is https://query.wikidata.org/bigdata/namespace/wdq/sparql 
 
@@ -168,16 +170,86 @@ ie the descriptors that you derive from the SMILES from QSAR(?) using rcdk
 These will give a collection of descriptors
 which you can use as variables,
 then generate latent variables with PLS.
-##Descriptors
+##Descriptors with rcdk
+rcdk  allows us to access the cheminformatics functionality of the CDK from within R.
 There is a list of descriptors here https://cdk.github.io/cdk/1.5/docs/api/org/openscience/cdk/qsar/descriptors/molecular/package-tree.html
 I can also learn about descriptors in the rcdk documentation.
 https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html
+
+##Explore rcdk
+The molecule objects (that result from load.molecules) are of class jobjRef (provided by the rJava package). As a result,they are pretty opaque to the user and are really meant to be processed using methods from the rcdk or rJava packages.
+
+Another common way to obtain molecule objects is by parsing SMILES strings. The simplest way to do this is eg
+```{r}
+smile <- 'c1ccccc1CC(=O)C(N)CC1CCCCOC1'
+mol <- parse.smiles(smile)[[1]]
+```
+Usage is more efficient when multiple SMILE are supplied, since then a single SMILES parser object is used to parse all the supplied SMILES.
+(from the rcdk tutorial -see useful sources)
+A key requirement for the predictive modeling of molecular properties and activities are molecular descriptors - numerical charaterizations of the molecular structure. 
+The CDK implements a variety of molecular descriptors, categorized.
+
+It is possible to evaluate all available descriptors at one go, or evaluate individual descriptors.
+Each descriptor name (eg "org.openscience.cdk.qsar.descriptors.molecular.WHIMDescriptor") is  a fully qualified Java class name for the corresponding descriptor. 
+These names can be supplied to eval.desc to evaluate a single or multiple descriptors for one or more molecules.
+
+Explore CDK Get the descriptor categories
+```{r}
+dc <- get.desc.categories()
+dc
+```
+
+
+Explore CDK Get the descriptor names for category 4  - electronic
+```{r}
+dn <- get.desc.names(dc[4])
+
+allDescs <- eval.desc(mol, dn)
+```
+Note: for this particular molecule and this set of descriptors, the majority are NA
+with the exception of bpol and apol, the sum of the atomic polarizabilities and the sum of the absolute value of the difference between atomic polarizabilities of all bonded atoms in the molecule respectively.
+Note: The return value of eval.desc is a data.frame with the descriptors in the columns and the molecules in the rows. For the above example we get a single row. But given a list of molecules, we can easily get a descriptor matrix.
+
+The list of descriptor names used here comes from the rcdk tutorial (https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html) the example in which the are also interested in predicting boiling points from organic molecules.
+```{r}
+mols <- parse.smiles(results_bp$SMILES)
+descNames_limited <- c(
+ 'org.openscience.cdk.qsar.descriptors.molecular.KierHallSmartsDescriptor',
+ 'org.openscience.cdk.qsar.descriptors.molecular.APolDescriptor',
+ 'org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor')
+descriptors_limited <- eval.desc(mols, descNames_limited)
+```
+Note: this gives 81 variables across the molecules list. Some will be NA, nevertheless 81 variables from 3 descriptors is a lot more than I expected. Prompting the question how many variables would there be from the complete set of around 50 descriptors?
+```{r}
+anyNA(descriptors_limited)
+```
+Confirms that , as mentioned in the tutorial, these descriptors have been chosen to not return NAs.
+Nevertheless, this code, preparatory to building a presictive model from the descriptor matrix, is set up to remove
+NA,
+correlated,
+and constant columns from the matrix.
+```{r}
+#remove NAs
+descriptors_limited <- descriptors_limited[, !apply(descriptors_limited, 2, function(x) any(is.na(x)) )]
+#remove constant columns
+descriptors_limited <- descriptors_limited[, !apply( descriptors_limited, 2, function(x) length(unique(x)) == 1 )] #no. of variables drops from 81 to 5 on running this
+#crudely remove highly correlated columns - alternative caret , GA, leaps, feature selectn
+r2 <- which(cor(descriptors_limited)^2 > .6, arr.ind=TRUE)
+r2 <- r2[ r2[,1] > r2[,2] , ]
+descriptors_limited <- descriptors_limited[, -r2] #reduces to 3 variables
+r2
+```
+
+##Choosing suitable variables for the predictive model
 Here there are two opposing approaches to build the model:
 purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables.
 vs a more knowledge-based approach. By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
+
 ##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
 ##Split dataset into Trainng and Test
+bp_train <- 
+bp_test <-
 Things to bear in mind:
 covariance
 normalise
