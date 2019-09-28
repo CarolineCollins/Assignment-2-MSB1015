@@ -31,9 +31,9 @@ then make a (PLS) Partial Least Squares model (or similar)
 in an R Markdown notebook with RStudio. 
 Note that to correctly use the model for prediction it is necessary to split
 the dataset into a training and a test set.
-(using 10% or 20% as test set and the remaining fortraining) 
+(using 10% or 20% as test set and the remaining for training) 
 and also to use cross-validation 
-(e.g. Leave-on-Out or Leave-10%-Out) 
+(e.g. Leave-one-Out or Leave-10%-Out) 
 An elbow plot will help to estimate the optimal number of latent variables in the predictive model. 
 A scatterplot of the model predictions for the test set of the dependent variable (the modelled property) versus the experimental (real, observed) value will serve as a visualisation of the accuracy of the model predictions.
 This assignment is part of weeks 4 and 5 of Scientific Programming on the Master's Systems Biology at Maastricht University. ( https://www.maastrichtuniversity.nl/education/master/master-systems-biology )
@@ -172,6 +172,9 @@ then generate latent variables with PLS.
 There is a list of descriptors here https://cdk.github.io/cdk/1.5/docs/api/org/openscience/cdk/qsar/descriptors/molecular/package-tree.html
 I can also learn about descriptors in the rcdk documentation.
 https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html
+Here there are two opposing approaches to build the model:
+purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables.
+vs a more knowledge-based approach. By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
 ##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
 ##Split dataset into Trainng and Test

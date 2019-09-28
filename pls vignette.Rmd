@@ -50,7 +50,7 @@ summary(gas1)
 ```
 The validation results here are Root Mean Squared Error of Prediction (RMSEP). 
 There are 2 cross-validation estimates: CV is the ordinary CV estimate, and adjCV is a bias-corrected CV estimate
-[ref: Bjørn-Helge Mevik and Henrik Ren´e Cederkvist. Mean squared error of prediction
+[ref: Bjørn-Helge Mevik and Henrik Rene Cederkvist. Mean squared error of prediction
 (MSEP) estimates for principal component regression (PCR) and partial least squares
 regression (PLSR). Journal of Chemometrics, 18(9):422-429, 2004.]. 
 For a LOO CV, there is virtually no difference between adjCV and CV.
