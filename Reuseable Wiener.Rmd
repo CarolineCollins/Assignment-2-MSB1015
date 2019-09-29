@@ -252,8 +252,8 @@ descriptor_matrix_1 <- rename(descriptor_matrix_1,c("results_bp$boilingpoint" = 
 
 ##Choosing suitable variables for the predictive model
 Here there are two opposing approaches to building the model:
-purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables.
-vs a more knowledge-based approach. By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
+purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables. (bp_model_2)
+vs a more knowledge-based approach (bp_model_1). By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
 
 ##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
@@ -291,11 +291,56 @@ plot(bp_model_1, ncomp = 2, asp = 1, line = TRUE)
 predict on the test set
 ```{r}
 pred_bp_1 <- predict(bp_model_1, ncomp = 2, newdata = bp_test)
-plot(pred_bp_1,bp_test$boilingpoint, asp=1)
+plot(pred_bp_1,bp_test$boilingpoint)
 ```
+
 ```{r}
 RMSEP(bp_model_1, newdata = bp_test)
 ```
+This is not a satisfactory model.
+It does not perform well at predicting the boiling points of compounds in the training set.
+
+##Model 2 kitchen sink version
+Get all the descriptors possible 
+
+```{r}
+descNames <- unique(unlist(sapply(get.desc.categories(), get.desc.names))) #50 descriptors
+dn_all <- eval.desc(mols, descNames) #286 variables
+```
+Into one big decriptor_matrix_2
+remove correlated, constant and NA columns as before
+```{r}
+anyNA(dn_all)
+#remove NAs
+desc_all <- dn_all[, !apply(dn_all, 2, function(x) any(is.na(x)) )]
+#results in 219 variables (before was 286 variables)
+#Add boiling point to this to make the descriptor matrix
+descriptor_matrix_2 <-  cbind(desc_all, results_bp$boilingpoint)
+#note rename() needs library(plyr)
+descriptor_matrix_2 <- rename(descriptor_matrix_2,c("results_bp$boilingpoint" = "boilingpoint"))       #renames awkward column name (uses dplyr package)
+```
+Split the training and test sets.
+```{r}
+bp_train_2 <- descriptor_matrix_2[(1:100),]
+bp_test_2 <- descriptor_matrix_2[-(1:100),]
+```
+Make a big model
+```{r}
+bp_model_2 <- plsr(boilingpoint ~., data = bp_train_2, ncomp = 10, validation = "CV" )
+summary(bp_model_2)
+```
+```{r}
+plot(RMSEP(bp_model_2), legendpos = "topright")
+```
+What's the predictive power of this data-driven model?
+```{r}
+plot(bp_model_2, ncomp = 6, asp = 1, line = TRUE)
+```
+
+
+```{r}
+
+
 
 Things to bear in mind:
 covariance
