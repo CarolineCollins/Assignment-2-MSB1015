@@ -329,26 +329,36 @@ Make a big model
 bp_model_2 <- plsr(boilingpoint ~., data = bp_train_2, ncomp = 10, validation = "CV" )
 summary(bp_model_2)
 ```
+Things to bear in mind: covariance,
+normalise
+scale
+scores and loadings
+CROSS-VALIDATION method : package offers "CV" and "LOO"
+
+
 ```{r}
 plot(RMSEP(bp_model_2), legendpos = "topright")
 ```
 What's the predictive power of this data-driven model?
 ```{r}
-plot(bp_model_2, ncomp = 6, asp = 1, line = TRUE)
+plot(bp_model_2, ncomp = 5, asp = 1, line = TRUE)
+```
+##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed in Test dataset
+Predict boiling points of the test set
+```{r}
+pred_bp_2 <- predict(bp_model_2, ncomp = 5, newdata = bp_test_2)
+plot(pred_bp_2,bp_test_2$boilingpoint, abline(a= 0, b = 1))
+
+```
+
+```{r}
+RMSEP(bp_model_2, newdata = bp_test_2)
 ```
 
 
-```{r}
 
 
 
-Things to bear in mind:
-covariance
-normalise
-scale
-scores and loadings
-CROSS-VALIDATION method
-##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed
 ##STEP 4 Further
 Report prediction errors 
 Compare to literature and/or simple model 
