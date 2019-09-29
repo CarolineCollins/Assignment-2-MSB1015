@@ -65,6 +65,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library("rcdk")
+library(pls)
 library(WikidataQueryServiceR)
 ```
 
@@ -239,17 +240,63 @@ r2 <- r2[ r2[,1] > r2[,2] , ]
 descriptors_limited <- descriptors_limited[, -r2] #reduces to 3 variables
 r2
 ```
+```{r}
+head(descriptors_limited)
+```
+Add boiling point to this
+```{r}
+descriptor_matrix_1 <- cbind(descriptors_limited, results_bp$boilingpoint)
+library(plyr)
+descriptor_matrix_1 <- rename(descriptor_matrix_1,c("results_bp$boilingpoint" = "boilingpoint"))       #renames awkward column name (uses dplyr package)
+```
 
 ##Choosing suitable variables for the predictive model
-Here there are two opposing approaches to build the model:
+Here there are two opposing approaches to building the model:
 purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables.
 vs a more knowledge-based approach. By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
 
 ##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
 ##Split dataset into Trainng and Test
-bp_train <- 
-bp_test <-
+In this case the rows are not ranked, but ideally, to make the code universally reusable
+I should randomly sample away a percentage of the matrix row dimension to be the test set.
+And assign the remainder to be train.
+For now, time restraints, bash out a result, use this:
+```{r}
+
+bp_train <- descriptor_matrix_1[1:100,]
+bp_test <- descriptor_matrix_1[-(1:100),]
+```
+
+
+
+Make first model
+There are only 3 variables
+No surprise
+```{r}
+
+
+bp_model_1 <- plsr(boilingpoint ~. ,ncomp = 3, data = bp_train, validation = "CV")
+summary(bp_model_1)
+```
+```{r}
+plot(RMSEP(bp_model_1), legendpos = "topright")
+```
+What's the predictive power of this very basic model with 2 parameters?
+```{r}
+plot(bp_model_1, ncomp = 2, asp = 1, line = TRUE)
+```
+
+
+predict on the test set
+```{r}
+pred_bp_1 <- predict(bp_model_1, ncomp = 2, newdata = bp_test)
+plot(pred_bp_1,bp_test$boilingpoint, asp=1)
+```
+```{r}
+RMSEP(bp_model_1, newdata = bp_test)
+```
+
 Things to bear in mind:
 covariance
 normalise

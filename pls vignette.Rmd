@@ -66,6 +66,10 @@ AT THE ELBOW WE HAVE both:
 1. REDUCED ERROR (how to measure the error?)
                   (Root Mean Squared Error of Prediction (RMSEP)) and
 2. STOPPED ADDING COMPONENTS BEFORE WE REACH AN OVERFITTING SITUATION.
+The legendpos argument adds a legend at the indicated position. 
+Two components seem to be enough to give a good RMSEP of 0.297. 
+As mentioned in the introduction, the main practical difference between PCR and PLSR is that PCR often needs more components than PLSR to achieve the same prediction error. 
+On this data set, PCR would need three components to achieve the same RMSEP.
 
 ##Measuring error
 On what data? - 
@@ -73,10 +77,7 @@ Training data: e.g. Rsquared
 Test data: e.g. RMSE - 
 Cross validation: e.g. Qsquared
 
-The legendpos argument adds a legend at the indicated position. 
-Two components seem to be enough to give a good RMSEP of 0.297. 
-As mentioned in the introduction, the main practical difference between PCR and PLSR is that PCR often needs more components than PLSR to achieve the same prediction error. 
-On this data set, PCR would need three components to achieve the same RMSEP.
+
 ====
 
 Once the number of components has been chosen, one can inspect different aspects of the
