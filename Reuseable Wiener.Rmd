@@ -257,3 +257,8 @@ scale
 scores and loadings
 CROSS-VALIDATION method
 ##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed
+##STEP 4 Further
+Report prediction errors 
+Compare to literature and/or simple model 
+Repeat and apply to **more chemical structures** 
+Explain the differences in results
