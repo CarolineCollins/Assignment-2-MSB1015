@@ -155,6 +155,14 @@ range(results_bp$boilingpoint)
 ```{r}
 plot.default(results_bp$boilingpoint)
 ```
+Check the distribution of the input data
+```{r}
+hist(results_bp$boilingpoint)
+```
+The boiling points are not normally distributed.
+It will be important to check the distribution of the training and test sets later to verify that neither is biased or skewed.
+
+
 Chemistry beginner's question:
 Does the length of the SMILES string correlate with the boiling point?
 ```{r}
@@ -267,7 +275,15 @@ For now, time restraints, bash out a result, use this:
 bp_train <- descriptor_matrix_1[1:100,]
 bp_test <- descriptor_matrix_1[-(1:100),]
 ```
-
+Check the distribution of the boiling points of the two datasets
+```{r}
+hist(bp_test$boilingpoint)
+```
+Satisfactory: the independent test set has a similar distribution to the full set of alkanes. Though none in the lowest range.
+Now check the distribution of boiling points of the training set
+```{r}
+hist(bp_train$boilingpoint)
+```
 
 
 Make first model
