@@ -107,11 +107,12 @@ WHERE {
 }'
 results_first = query_wikidata(sparql_query)
 ```
-first eyeball of the data
+first eyeball of the data : 131 unique / distinct observations are returned (140 non-unique)
 ```{r}
 range(results_first$boilingpoint)
 ```
-That range has a suspiciously low value. In Kelvin expect all non-negative!
+In a range -44.00 to 994.15 - units unknown.
+That range has a suspiciously low value. In Kelvin expect all values non-negative!
 Let's check out the units of the boiling points and 
 convert anything non-Kelvin to Kelvin.
 
