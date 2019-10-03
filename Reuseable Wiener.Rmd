@@ -1,7 +1,7 @@
 ---
 title: "Assignment 2 MSB1015 Making Multivariate Statistics Reuseable"
 author: "Caroline Collins 6192527"
-date: "25 September 2019"
+date: "3 October 2019"
 output: html_document
 ---
 ##Note 
@@ -40,21 +40,20 @@ This assignment is part of weeks 4 and 5 of Scientific Programming on the Master
 
 ##Useful sources
 
-Pharmacology: Rang & Dale, ISBN
+- Pharmacology: Rang & Dale, ISBN
 9780702053627, in that edition Chapter 7 en 60 are of interest
-For general knowledge about QSAR, e.g.:
+- For general knowledge about QSAR, e.g.:
 Varnek & Tropsha, Chemoinformatics approaches to virtual screening
-Ch. 6 of Kahnâs Recent Trends on QSAR in the Pharmaeutical Perceptions
+- Ch. 6 of Kahnâs Recent Trends on QSAR in the Pharmaeutical Perceptions
 (ebook)
-Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
+- Wiener H. Structural Determination of Paraffin Boiling Points. Journal of the
 American Chemical Society. 1947 Jan;69(1):17-20.
-R Markdown: [ https://rmarkdown.rstudio.com/ ]
-Cheatsheet:[ https://www.rstudio.com/wpcontent/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf]
-PLS package for R:[ https://cran.r-project.org/web/packages/pls/]
-Vignette: [ https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf]
-rcdk package for R Vignette/tutorial :[ https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html]
+- R Markdown: [ https://rmarkdown.rstudio.com/ ]
+- PLS package for R:[ https://cran.r-project.org/web/packages/pls/]
+- Vignette: [ https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf]
+- rcdk package for R Vignette/tutorial :[ https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html]
 
-The WikiData SPARQL endpoint is [https://query.wikidata.org/bigdata/namespace/wdq/sparql ]
+- The WikiData SPARQL endpoint is [https://query.wikidata.org/bigdata/namespace/wdq/sparql ]
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -74,15 +73,19 @@ Maintaining the SPARQL query syntax.
 The first query checks for any entries still waiting for their  boiling point statements to be entered in WikiData.
 
 ###WikiData objects and properties
-P31 is an instance of
-P279 is is a subclass of
-Q41581 an alkane is an acyclic saturated hydrocarbon
-P2102 is the boiling point
-P233 is the canonical SMILES
+-P31 is an instance of
+-P279 is is a subclass of
+-Q41581 an alkane is an acyclic saturated hydrocarbon
+-P2102 is the boiling point
+-P233 is the canonical SMILES
 
 ###SMILES
 is a text string that represents the compound structure in 2D. ie. it specifies elements, connectivity and bond order, but not the 3D position of each atom.
-Examples of SMILES: ethanol CCO; ethylene C=C; acetylene C#C; 2-propanol CC(O)C
+Examples of SMILES:
+-ethanol CCO; 
+-ethylene C=C; 
+-acetylene C#C; 
+-2-propanol CC(O)C
 Query WikiData to find if there are many molecules with missing boiling point data.
 ```{r}
 sparql_query_missingbp <- 'SELECT DISTINCT ?alkane ?alkaneLabel ?SMILES ?boilingpoint
@@ -348,7 +351,7 @@ This model is more successful than bp_model_1, predicting reasonably well.
 RMSEP(bp_model_2, newdata = bp_test_2)
 ```
 
-It is interesting to note that, based on the earlier elbow plot depicting the results of the cross-validation RMSEP's from the training set alone,  the choice of 2, 3,4,5 or 6 latent variables for the model looked optimum, with the final model choice of 3 latent variables meeting the criterion 'As simple as possible, but not simpler than really needed', Whereas,the error measurement at 10 latent variables (ncomp = 10) gave the lowest actual error on the first particular set of independent randomly sampled test data that I ran. That number and the RMSEP will vary depending on the particular test set, and considering the multimodal distribution of the boiling points and the small (c.100) number of distinct molecules used to build the model, it can vary considerably.
+It is interesting to note that, based on the earlier elbow plot depicting the results of the cross-validation RMSEP's from the training set alone,  the choice of 2, 3,4,5 or 6 latent variables for the model looked optimum, with the final model choice of 3 latent variables meeting the criterion 'As simple as possible, but not simpler than really needed', Whereas,the error measurement at 10 latent variables (ncomp = 10) gave the lowest actual error on the first particular set of independent randomly sampled test data that I ran, and on another run, was still decreasing at ncomp = 12. That number and the RMSEP will vary depending on the particular test set, and considering the multimodal distribution of the boiling points and the small (c.100) number of distinct molecules used to build the model, it can vary considerably.
 
 ###Comparison of correlations
 At the start of the project, I observed that between SMILES string length and boiling point the correlation was 0.93...
@@ -356,19 +359,19 @@ Let us compare that to the correlation of bp_model_1
 ```{r}
 cor(pred_bp_1,bp_test$boilingpoint)
 ```
-On this particular test set,  0.935. only a very small improvement.
-Compare: what is now the correlation of my final model (bp_model_2) between predicted and observed boiling points? 0.99
+On this particular test set,  0.935. (another run: 0.941) only a very small improvement on the SMILES model.
+Compare: what is now the correlation of my final model (bp_model_2) between predicted and observed boiling points? 0.99 (on another run : 0.979)
 ```{r}
 cor(pred_bp_2,bp_test_2$boilingpoint)
 ```
-So the data-driven model with few latent variables created from a large number of variables with a chemical structural meaning is an improvement on the first simple model that I created from handpicked CDK descriptors with only one latent variable. That first model had a similar predicted/oberved correlation to the initial ultra-simple SMILES stringlength vs boiling point comparison.
+So, the data-driven model with few latent variables created from a large number of variables with a chemical structural meaning is an improvement on the first simple model that I created from handpicked CDK descriptors with only one latent variable. That first model had a similar predicted/oberved correlation to the initial ultra-simple SMILES stringlength vs boiling point comparison.
 
-**The Final model RMSEP is 42.77 on this  test set with 3 latent variables.**
+**The Final model (data-driven - 3 latent variables) RMSEP is 55.12 on this  test set.**
 
 
 Comparing this to literature : Wiener constructed a relationship with 3 variables n (number of Carbon atoms) and w and p.
 
 It would be interesting to repeat and apply to **more chemical structures** possibly alcohols. Currently there is a lack of available boiling point data in WikiData on alcohols and other organic molecules.
-
-We might expect a model trained and tested on more complex organic molecules to be more complex (require more latent variables) in order to make similarly successful predictions.
+We need more data to create a good model because
+we might expect a model trained for more complex organic molecules to be, itself, more complex (require more latent variables) in order to make similarly successful predictions.
 END.
