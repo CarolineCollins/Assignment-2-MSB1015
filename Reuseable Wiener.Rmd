@@ -50,7 +50,7 @@ Varnek & Tropsha, Chemoinformatics approaches to virtual screening
 American Chemical Society. 1947 Jan;69(1):17-20.
 - R Markdown: [ https://rmarkdown.rstudio.com/ ]
 - PLS package for R:[ https://cran.r-project.org/web/packages/pls/]
-- Vignette: [ https://cran.r-project.org/web/packages/pls/vignettes/pls- manual.pdf]
+- Vignette: [ https://cran.r-project.org/web/packages/pls/vignettes/pls-manual.pdf]
 - rcdk package for R Vignette/tutorial :[ https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html]
 
 - The WikiData SPARQL endpoint is [https://query.wikidata.org/bigdata/namespace/wdq/sparql ]
@@ -59,7 +59,8 @@ American Chemical Society. 1947 Jan;69(1):17-20.
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##STEP 0 Set up libraries required for the assignment
+##STEP 0 SETUP
+Set up libraries required for the assignment
 
 ```{r}
 library("rcdk")
@@ -67,19 +68,19 @@ library(pls)
 library(WikidataQueryServiceR)
 ```
 
-##STEP 1 EXECUTE QUERY
+##STEP 1 COLLECT and PREPARE DATA
 Using the R package WikidataQueryServiceR. 
 Maintaining the SPARQL query syntax.
 The first query checks for any entries still waiting for their  boiling point statements to be entered in WikiData.
 
-###WikiData objects and properties
--P31 is an instance of
--P279 is is a subclass of
--Q41581 an alkane is an acyclic saturated hydrocarbon
--P2102 is the boiling point
--P233 is the canonical SMILES
+###WikiData objects and properties used here
+- P31 is an instance of
+- P279 is is a subclass of
+- Q41581 an alkane is an acyclic saturated hydrocarbon
+- P2102 is the boiling point
+- P233 is the canonical SMILES
 
-###SMILES
+###Notes on SMILES
 is a text string that represents the compound structure in 2D. ie. it specifies elements, connectivity and bond order, but not the 3D position of each atom.
 Examples of SMILES:
 -ethanol CCO; 
@@ -116,7 +117,8 @@ In the first week of the project this returned a range -44.00 to 994.15 - units 
 That range has a suspiciously low value. In Kelvin expect all values non-negative!
 Let's check out the units of the boiling points and 
 convert anything non-Kelvin to Kelvin.
-###Convert units###
+
+###Convert units
 The following query is altered from the one provided by Egon  "set up to deal with the complex structure of statements with units in Wikidata." ie it reaches right down into the hierarchical structure of the WikiData  data to extract the various units entered by different WikiData users, and also a human readable label for those units.
 ```{r}
 units_query <- 'SELECT DISTINCT ?alkane ?alkaneLabel ?SMILES ?boilingpoint ?bpUnit ?bpUnitLabel WHERE {
@@ -150,6 +152,7 @@ unique(results_bp$bpUnitLabel)
 ```{r}
 head(results_bp$boilingpoint)
 ```
+
 ##Eyeball the data
 ```{r}
 range(results_bp$boilingpoint)
@@ -157,11 +160,15 @@ range(results_bp$boilingpoint)
 ```{r}
 plot.default(results_bp$boilingpoint)
 ```
-Check the distribution of the input data
+  
+  
+  Check the distribution of the input data
 ```{r}
 hist(results_bp$boilingpoint)
 ```
-The boiling points are not normally distributed.
+  
+  
+  The boiling points are not normally distributed.
 It will be important to check the distribution of the training set later to verify that it is not biased or skewed.
 
 
@@ -170,17 +177,19 @@ Does the length of the SMILES string correlate with the boiling point?
 ```{r}
 plot(nchar(results_bp$SMILES),results_bp$boilingpoint)
 ```
-the correlation between the boiling point and the string length of the SMILES looks good!!
+ 
+ 
+  The correlation between the boiling point and the string length of the SMILES looks good!!
 ```{r}
 cor(nchar(results_bp$SMILES),results_bp$boilingpoint)
 ```
+
 ##Collect variables which we expect to be informative of boiling point
-try and translate the data that I have , in the form of SMILES, into what we need out of the database in order to do the regression. For this use R package rcdk.
-ie the descriptors that you derive from the SMILES from QSAR(?) using rcdk
-(parse.smiles function)
-These will give a collection of descriptors
-which you can use as variables,
-then generate latent variables with PLS.
+Translate the data that we have extracted, in the form of SMILES, into what we need out of the CDK database in order to do the regression. For this use R package rcdk.
+This will give a collection of descriptors
+which can be used as variables,
+following that we will then generate latent variables with PLS.
+
 ##Get Molecule Descriptors with rcdk
 A key requirement for the predictive modeling of molecular properties and activities are molecular descriptors - numerical charaterizations of the molecular structure. 
 The CDK implements a variety of molecular descriptors, categorized.
@@ -202,17 +211,18 @@ It is possible to evaluate all available descriptors at one go, or evaluate indi
 Each descriptor name (eg "org.openscience.cdk.qsar.descriptors.molecular.WHIMDescriptor") is  a fully qualified Java class name for the corresponding descriptor. 
 These names can be supplied to eval.desc to evaluate a single or multiple descriptors for one or more molecules.
 
-Explore CDK Get the descriptor categories
+Explore the descriptor categories
 ```{r}
 dc <- get.desc.categories()
 dc
 ```
+
 ###Choosing suitable variables for the predictive model
 Here there are two opposing approaches to building the model:
 purely data-driven throw the kitchen sink at it, uses all the available descriptors from CDK (how many datapoints is that? - 219 after cleaning), followed by dimension reduction and then predicts based on the optimum number of latent variables. (bp_model_2)
 vs a more knowledge-based approach (bp_model_1). By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
-###build a set of descriptors for a very simple model###
+###Generate a set of descriptors for a very simple model###
 The list of descriptor names used here comes from the rcdk tutorial (https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html) the example in which the are also interested in predicting boiling points from organic molecules.
 ```{r}
 mols <- parse.smiles(results_bp$SMILES)
@@ -222,7 +232,7 @@ descNames_limited <- c(
  'org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor')
 descriptors_limited <- eval.desc(mols, descNames_limited)
 ```
-Note: this gives 81 variables across the molecules list. Some will be NA, nevertheless 81 variables from 3 descriptors is a lot more than I expected. Prompting the question how many variables would there be from the complete set of around 50 descriptors?
+Note: this gives 81 variables across the molecules list. Some will be NA, nevertheless 81 variables from 3 descriptors is a lot more than I expected. Prompting the question how many variables would there be from the complete set of around 50 descriptors? (answer: more than 200)
 ```{r}
 anyNA(descriptors_limited)
 ```
@@ -246,7 +256,8 @@ descriptor_matrix_1 <- rename(descriptor_matrix_1,c("results_bp$boilingpoint" = 
 ```
 
 
-##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
+##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares (PLS) with plsr
+
 ###Split dataset into completely independent, randomly sampled Training and Test datasets
 make a random 80/20 split
 ```{r}
@@ -262,11 +273,14 @@ bp_test <- descriptor_matrix_1[sample_indexes,]
 ```{r}
 hist(bp_train$boilingpoint)
 ```
+
+
 Check the distribution of the boiling points of the training dataset on a histogram.
 Satisfactory: the training set has a similar distribution to the full set of alkanes.
 
 ###Make first model
-There are only 5 descriptor variables
+
+There are 5 descriptor variables
 Cross validation and PLS results, displayed on an elbow plot, suggest that 1 latent variable is optimum for this model.
 ```{r}
 
@@ -277,8 +291,10 @@ summary(bp_model_1)
 ```{r}
 plot(RMSEP(bp_model_1), legendpos = "topright")
 ```
+
+
 ###What's the predictive power of this very basic model with a single latent variable?
-predict on the test set
+Predict on the test set
 ```{r}
 pred_bp_1 <- predict(bp_model_1, ncomp = 1, newdata = bp_test)
 plot(pred_bp_1,bp_test$boilingpoint, abline(a= 0, b = 1))
@@ -287,10 +303,11 @@ plot(pred_bp_1,bp_test$boilingpoint, abline(a= 0, b = 1))
 ```{r}
 RMSEP(bp_model_1, newdata = bp_test)
 ```
-This is not a satisfactory model. With a single latent variables RMSEP is 93.03 Kelvin.
+This is not a satisfactory model. With a single latent variables RMSEP is somewhere between 90 and 100 Kelvin.
 It does not perform very well at predicting the boiling points of compounds in the training set. This choice of descriptors appears not to be sufficiently predictive.
 
 ##Model 2 A data-driven model (bp_model_2)
+
 ###Get all the descriptors possible from CDK
 
 ```{r}
@@ -333,18 +350,25 @@ Select the optimum number of latent variables
 ```{r}
 plot(RMSEP(bp_model_2), legendpos = "topright")
 ```
-based on the elbow plot , a model with 3 latent variables appears optimum with good performance without adding  too much complexity. What's the predictive power of this data-driven model with 3 latent variables?
 
-##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed in Test dataset
-Predict boiling points of the test set
+
+Based on the elbow plot , a model with 3 latent variables appears optimum with good performance without adding  too much complexity. What's the predictive power of this data-driven model with 3 latent variables?
+
+##STEP 3 VISUALISATION 
+
+Predict boiling points of the test set and generate a
+Scatterplot of Predicted boiling pt vs Observed boiling point in Test dataset
+
 ```{r}
 pred_bp_2 <- predict(bp_model_2, ncomp = 3, newdata = bp_test_2)
 plot(pred_bp_2,bp_test_2$boilingpoint, abline(a= 0, b = 1))
 
 ```
+
+
 This model is more successful than bp_model_1, predicting reasonably well.
 
-##STEP 4 Further
+##STEP 4 CONCLUSIONS
 
 ###Report prediction errors 
 ```{r}
@@ -366,12 +390,16 @@ cor(pred_bp_2,bp_test_2$boilingpoint)
 ```
 So, the data-driven model with few latent variables created from a large number of variables with a chemical structural meaning is an improvement on the first simple model that I created from handpicked CDK descriptors with only one latent variable. That first model had a similar predicted/oberved correlation to the initial ultra-simple SMILES stringlength vs boiling point comparison.
 
-**The Final model (data-driven - 3 latent variables) RMSEP is 55.12 on this  test set.**
+**The Final model (data-driven - 3 latent variables) RMSEP varies between 30 and 56, depending on the randomly selected test set.**
 
 
-Comparing this to literature : Wiener constructed a relationship with 3 variables n (number of Carbon atoms) and w and p.
+###Comparing this to literature : 
+Wiener constructed a relationship with 3 variables n (number of Carbon atoms) and w and p.
 
+
+###Reusebility of the code for other types of molecules
 It would be interesting to repeat and apply to **more chemical structures** possibly alcohols. Currently there is a lack of available boiling point data in WikiData on alcohols and other organic molecules.
 We need more data to create a good model because
 we might expect a model trained for more complex organic molecules to be, itself, more complex (require more latent variables) in order to make similarly successful predictions.
-END.
+
+###END.
