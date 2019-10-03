@@ -1,6 +1,6 @@
 Welcome to the repository of Assignment 2, where a complete beginner will employ
 Github pages, Rmarkdown, SPARQL queries and multivariate statistics to do some 
-Computational chemistry. Reuseable-Wiener.html
+Computational chemistry. Visit the page at https://carolinecollins.github.io/Assignment-2-MSB1015/Reuseable-Wiener.html
 
 As a prerequisite, this notebook needs a certain Wikidata query R package which you can find here:
 https://github.com/bearloga/WikidataQueryServiceR
