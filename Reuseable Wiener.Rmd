@@ -204,6 +204,11 @@ Explore CDK Get the descriptor categories
 dc <- get.desc.categories()
 dc
 ```
+###Choosing suitable variables for the predictive model
+Here there are two opposing approaches to building the model:
+purely data-driven throw the kitchen sink at it, uses all the available descriptors from CDK (how many datapoints is that? - 219 after cleaning), followed by dimension reduction and then predicts based on the optimum number of latent variables. (bp_model_2)
+vs a more knowledge-based approach (bp_model_1). By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
+
 ###build a set of descriptors for a very simple model###
 The list of descriptor names used here comes from the rcdk tutorial (https://cran.r-project.org/web/packages/rcdk/vignettes/using-rcdk.html) the example in which the are also interested in predicting boiling points from organic molecules.
 ```{r}
@@ -219,7 +224,7 @@ Note: this gives 81 variables across the molecules list. Some will be NA, nevert
 anyNA(descriptors_limited)
 ```
 Confirms that , as mentioned in the tutorial, these descriptors have been chosen so as to not return NAs.
-Nevertheless, this code, preparatory to building a predictive model from the descriptor matrix, is set up to remove
+Nevertheless, this code, preparatory to building a predictive model from the descriptor matrix, is set up to remove columns with NAs and 
 any constant columns from the matrix.
 ```{r}
 #remove NAs
@@ -228,20 +233,14 @@ descriptors_limited <- descriptors_limited[, !apply(descriptors_limited, 2, func
 descriptors_limited <- descriptors_limited[, !apply( descriptors_limited, 2, function(x) length(unique(x)) == 1 )] #no. of variables drops from 81 to 5 on running this
 
 ```
-```{r}
-head(descriptors_limited)
-```
-Add boiling point to this
+
+
+Add boiling point to this descriptor matrix, this will enable us to use the formula syntax in plsr to build our model.
 ```{r}
 descriptor_matrix_1 <- cbind(descriptors_limited, results_bp$boilingpoint)
 library(plyr)
-descriptor_matrix_1 <- rename(descriptor_matrix_1,c("results_bp$boilingpoint" = "boilingpoint"))       #renames awkward column name (uses dplyr package)
+descriptor_matrix_1 <- rename(descriptor_matrix_1,c("results_bp$boilingpoint" = "boilingpoint"))       #renames awkward column name (requires dplyr package)
 ```
-
-##Choosing suitable variables for the predictive model
-Here there are two opposing approaches to building the model:
-purely data-driven throw the kitchen sink at it, uses all the available descriptors (how many datapoints is that?), followed by dimension reduction and then predicts based on the optimum number of latent variables. (bp_model_2)
-vs a more knowledge-based approach (bp_model_1). By eg. searching the descriptor list on "Weiner", "boiling point", "complexity" and handpicking likely important variables (this is the approach used in the rcdk vignette). The r pls package PLS method still employs principal component analysis, so our prediction will still run on latent variables anyway.
 
 
 ##STEP 2 MULTIVARIATE STATISTICS Partial Least Squares vs Multilinear Regression
@@ -260,13 +259,12 @@ bp_test <- descriptor_matrix_1[sample_indexes,]
 ```{r}
 hist(bp_train$boilingpoint)
 ```
-Check the distribution of the boiling points of the training dataset.
-
+Check the distribution of the boiling points of the training dataset on a histogram.
 Satisfactory: the training set has a similar distribution to the full set of alkanes.
 
 ###Make first model
-There are only 3 variables
-No surprise
+There are only 5 descriptor variables
+Cross validation and PLS results, displayed on an elbow plot, suggest that 1 latent variable is optimum for this model.
 ```{r}
 
 
@@ -276,12 +274,7 @@ summary(bp_model_1)
 ```{r}
 plot(RMSEP(bp_model_1), legendpos = "topright")
 ```
-What's the predictive power of this very basic model with a single latent variable?
-```{r}
-plot(bp_model_1, ncomp = 1, asp = 1, line = TRUE)
-```
-
-
+###What's the predictive power of this very basic model with a single latent variable?
 predict on the test set
 ```{r}
 pred_bp_1 <- predict(bp_model_1, ncomp = 1, newdata = bp_test)
@@ -294,7 +287,7 @@ RMSEP(bp_model_1, newdata = bp_test)
 This is not a satisfactory model. With a single latent variables RMSEP is 93.03 Kelvin.
 It does not perform very well at predicting the boiling points of compounds in the training set. This choice of descriptors appears not to be sufficiently predictive.
 
-##Model 2 A data-driven kitchen sink version
+##Model 2 A data-driven model (bp_model_2)
 ###Get all the descriptors possible from CDK
 
 ```{r}
@@ -303,6 +296,7 @@ dn_all <- eval.desc(mols, descNames) #286 variables
 ```
 
 remove NA - containing columns as before
+
 ```{r}
 anyNA(dn_all)
 #remove NAs
@@ -310,7 +304,8 @@ desc_all <- dn_all[, !apply(dn_all, 2, function(x) any(is.na(x)) )]
 #results in 219 variables (before was 286 variables)
 ```
 
-and create one big decriptor_matrix_2
+and create one big decriptor_matrix_2 containing the boiling point
+
 ```{r}
 
 #Add boiling point to this to make the descriptor matrix
@@ -319,23 +314,23 @@ descriptor_matrix_2 <-  cbind(desc_all, results_bp$boilingpoint)
 descriptor_matrix_2 <- rename(descriptor_matrix_2,c("results_bp$boilingpoint" = "boilingpoint"))       #renames awkward column name (uses dplyr package)
 ```
 Split the training and test sets.
+
 ```{r}
 bp_train_2 <- descriptor_matrix_2[-(sample_indexes),]
 bp_test_2 <- descriptor_matrix_2[sample_indexes,]
 ```
-Make a big model
+Make and cross-validate the model using plsr
+
 ```{r}
 bp_model_2 <- plsr(boilingpoint ~., data = bp_train_2, ncomp = 12, validation = "CV" )
 summary(bp_model_2)
 ```
-
-
-
+Select the optimum number of latent variables
 
 ```{r}
 plot(RMSEP(bp_model_2), legendpos = "topright")
 ```
-ased on the elbow plot , (see above) a model with 3 latent variables appears optimum with good performance without adding  too much complexity. What's the predictive power of this data-driven model with 3 latent variables?
+based on the elbow plot , a model with 3 latent variables appears optimum with good performance without adding  too much complexity. What's the predictive power of this data-driven model with 3 latent variables?
 
 ##STEP 3 VISUALISATION Scatterplot Predicted boiling pt vs Observed in Test dataset
 Predict boiling points of the test set
@@ -344,29 +339,36 @@ pred_bp_2 <- predict(bp_model_2, ncomp = 3, newdata = bp_test_2)
 plot(pred_bp_2,bp_test_2$boilingpoint, abline(a= 0, b = 1))
 
 ```
+This model is more successful than bp_model_1, predicting reasonably well.
+
 ##STEP 4 Further
-Report prediction errors 
+
+###Report prediction errors 
 ```{r}
 RMSEP(bp_model_2, newdata = bp_test_2)
 ```
 
-It is interesting to note that, based on the earlier elbow plot depicting the results of the cross-validation RMSEP's from the training set alone,  the choice of 2, 3,4,5 or 6 latent variables for the model looked optimum, with the final model choice of 3 latent variables meeting the criterion 'As simple as possible, but not simpler than really needed', Whereas, now we can see here the error measurement at 10 latent variables (ncomp = 10) gives the lowest actual error on the independent randomly sampled test data.
+It is interesting to note that, based on the earlier elbow plot depicting the results of the cross-validation RMSEP's from the training set alone,  the choice of 2, 3,4,5 or 6 latent variables for the model looked optimum, with the final model choice of 3 latent variables meeting the criterion 'As simple as possible, but not simpler than really needed', Whereas,the error measurement at 10 latent variables (ncomp = 10) gave the lowest actual error on the first particular set of independent randomly sampled test data that I ran. That number and the RMSEP will vary depending on the particular test set, and considering the multimodal distribution of the boiling points and the small (c.100) number of distinct molecules used to build the model, it can vary considerably.
 
-###remember how the correlation between SMILES string length and boiling point was 0.93...
+###Comparison of correlations
+At the start of the project, I observed that between SMILES string length and boiling point the correlation was 0.93...
+Let us compare that to the correlation of bp_model_1
 ```{r}
 cor(pred_bp_1,bp_test$boilingpoint)
 ```
-
-Compare: what is now the correlation between predicted and observed boiling points? 0.99
+On this particular test set,  0.935. only a very small improvement.
+Compare: what is now the correlation of my final model (bp_model_2) between predicted and observed boiling points? 0.99
 ```{r}
 cor(pred_bp_2,bp_test_2$boilingpoint)
 ```
-So the data-driven model with few latent variables created from a large number of variables with a chemical structural meaning is an improvement on the first simple model that I created from handpicked CDK descriptors with only one latent variable. That first model has a similar predict/oberve correlation to the ultra-simple SMILES stringlength vs boiling point comparison.
+So the data-driven model with few latent variables created from a large number of variables with a chemical structural meaning is an improvement on the first simple model that I created from handpicked CDK descriptors with only one latent variable. That first model had a similar predicted/oberved correlation to the initial ultra-simple SMILES stringlength vs boiling point comparison.
 
-**The Final model RMSEP is 42.77 on the test set with 3 latent variables.**
+**The Final model RMSEP is 42.77 on this  test set with 3 latent variables.**
 
 
 Comparing this to literature : Wiener constructed a relationship with 3 variables n (number of Carbon atoms) and w and p.
 
-Repeat and apply to **more chemical structures** possibly alcohols.
-Explain the differences in results. Currently there is a lack of available boiling point data in WikiData on alcohols and other organic molecules.
+It would be interesting to repeat and apply to **more chemical structures** possibly alcohols. Currently there is a lack of available boiling point data in WikiData on alcohols and other organic molecules.
+
+We might expect a model trained and tested on more complex organic molecules to be more complex (require more latent variables) in order to make similarly successful predictions.
+END.
