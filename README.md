@@ -3,7 +3,7 @@ Welcome to the repository of Assignment 2, where I have employed Github pages, R
 SPARQL queries, the WikiData and CDK databases and multivariate statistics (PLS) to do some Computational chemistry. 
 Visit the report page at 
 
-[Reuseable Wiener code](https://carolinecollins.github.io/Assignment-2-MSB1015/Reuseable-Wiener.html)
+[Reuseable Wiener](https://carolinecollins.github.io/Assignment-2-MSB1015/Reuseable-Wiener.html)
 
 to see how I built two models, one knowledge- and one data-driven, to predict the boiling points of 
 alkanes from descriptors of their structural chemistry.
