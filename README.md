@@ -15,7 +15,7 @@ A SPARQL query gets SMILEs molecule strings which are then evaluated in CDK, obt
 which are then used as input to a model which predicts the molecules' boiling points.
 
 ### Reuseable
-By altering the SPARQL query you can reuse this code to predict different properties of different molecules.
+By altering the SPARQL query you can reuse this code `Reuseable Wiener.Rmd` to predict different properties of different molecules.
 
 ### Scientific Programming
 This assignment was part of weeks 4 and 5 of Scientific Programming 
