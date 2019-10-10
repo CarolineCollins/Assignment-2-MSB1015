@@ -10,7 +10,7 @@ As a prerequisite, this notebook needs a certain Wikidata query R package which 
 ##Project Synopsis
 
 Before running a statistical analysis, we began with some WikiData data that needed to be completed, referenced, inspected, processed and cleaned.
-After this came the analysis and modelling, and, finally visualisation of the
+After this came the analysis and modelling, and, finally, visualisation of the
 results. 
 The project process taught us that there are many choices to be made about methods, parameters and variables.
 I aimed to document this process in the right level of detail to render the project reproducible. This includes justifying many of the modelling choices. 
